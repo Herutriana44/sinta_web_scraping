@@ -69,14 +69,12 @@ subprocess.run(['hdfs', '--daemon', 'start', 'datanode'], env=os.environ)
 ```
 
 #### Jika hdfs3 library error:
-```python
-# Install ulang dengan cara berbeda
-!pip uninstall -y hdfs3
-!pip install hdfs3
+Notebook ini sudah dilengkapi dengan alternatif otomatis menggunakan subprocess wrapper. Jika hdfs3 gagal diinstall:
+1. Notebook akan otomatis membuat wrapper HDFS menggunakan subprocess
+2. File `hdfs_helper.py` akan dibuat otomatis
+3. File `sinta_journals_etl.py` akan dimodifikasi untuk menggunakan wrapper
 
-# Atau gunakan alternatif: pyarrow
-!pip install pyarrow
-```
+Tidak perlu melakukan tindakan manual, notebook akan menangani ini secara otomatis.
 
 ### 📊 Akses NameNode Web UI
 
@@ -119,6 +117,8 @@ Setelah ETL selesai, Anda akan mendapatkan:
 
 2. **File HDFS** (di `/user/sinta/journals/`):
    - File yang sama seperti di lokal, tersimpan di HDFS
+   - **Struktur folder**: `/user/sinta/journals/{YYYY}/{MM}/{DD}/{filename}`
+   - **Contoh**: `/user/sinta/journals/2026/01/12/journals_data_20260112_060509.csv`
 
 ## Download Hasil
 
@@ -140,10 +140,67 @@ files.download('output_data/extraction_stats_[timestamp].json')
 Atau download dari HDFS:
 
 ```python
+# Cek struktur folder berdasarkan tanggal
+from datetime import datetime
+today = datetime.now().strftime("%Y/%m/%d")
+hdfs_path = f"/user/sinta/journals/{today}"
+
+# List file di HDFS
+!hdfs dfs -ls -R /user/sinta/journals/
+
 # Download dari HDFS ke lokal
-!hdfs dfs -get /user/sinta/journals/[date]/journals_data_*.csv .
-!hdfs dfs -get /user/sinta/journals/[date]/journals_data_*.json .
+!hdfs dfs -get {hdfs_path}/journals_data_*.csv .
+!hdfs dfs -get {hdfs_path}/journals_data_*.json .
+!hdfs dfs -get {hdfs_path}/extraction_stats_*.json .
 ```
+
+## Lokasi File di HDFS
+
+File-file yang dihasilkan dari proses ETL disimpan di HDFS dengan struktur berikut:
+
+### Struktur Direktori:
+```
+/user/sinta/journals/
+└── {YYYY}/
+    └── {MM}/
+        └── {DD}/
+            ├── journals_data_{timestamp}.csv
+            ├── journals_data_{timestamp}.json
+            └── extraction_stats_{timestamp}.json
+```
+
+### Contoh Path Lengkap:
+Jika ETL dijalankan pada tanggal **12 Januari 2026 pukul 06:05:09**, file akan tersimpan di:
+- `/user/sinta/journals/2026/01/12/journals_data_20260112_060509.csv`
+- `/user/sinta/journals/2026/01/12/journals_data_20260112_060509.json`
+- `/user/sinta/journals/2026/01/12/extraction_stats_20260112_060509.json`
+
+### Cara Mengakses File di HDFS:
+
+1. **List semua file di HDFS:**
+   ```bash
+   !hdfs dfs -ls -R /user/sinta/journals/
+   ```
+
+2. **Lihat isi file CSV:**
+   ```bash
+   !hdfs dfs -cat /user/sinta/journals/2026/01/12/journals_data_*.csv | head -20
+   ```
+
+3. **Download file ke lokal:**
+   ```bash
+   !hdfs dfs -get /user/sinta/journals/2026/01/12/journals_data_*.csv .
+   ```
+
+4. **Copy file ke lokal:**
+   ```bash
+   !hdfs dfs -copyToLocal /user/sinta/journals/2026/01/12/journals_data_*.csv .
+   ```
+
+5. **Cek ukuran file:**
+   ```bash
+   !hdfs dfs -du -h /user/sinta/journals/2026/01/12/
+   ```
 
 ## Referensi
 
