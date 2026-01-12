@@ -1,0 +1,12 @@
+{
+  "extraction_date": "2026-01-12T07:15:25.034402",
+  "statistics": {
+    "total_files": 23,
+    "total_journals": 227,
+    "successful_extractions": 227,
+    "failed_extractions": 0,
+    "hdfs_saves": 0,
+    "hdfs_errors": 0,
+    "errors": []
+  }
+}
